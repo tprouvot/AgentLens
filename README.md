@@ -8,7 +8,7 @@ Understand what your Agentforce agent actually did — visually.
 
 ## What it does
 
-Load a trace from the **Agentforce DX** extension and AgentLens shows you:
+Load a trace from the **Agentforce DX** extension, the **NGA builder**, or the **SF CLI** and AgentLens shows you:
 
 - **Agent Graph** — which sub agents talked to each other, how many times, and in what order
 - **Finite State Machine** — the internal orchestration flow for each sub agent: LLM calls, tool executions, variable mutations, and handoffs
@@ -33,6 +33,16 @@ AgentLens accepts trace JSON from any of these sources:
 2. Paste or upload a trace JSON from any of the sources above
 3. The first sub agent is auto-selected — step through the trace with arrow keys or the prev/next buttons; handoffs navigate to the next agent automatically
 
+### Chrome Extension
+
+1. Open `chrome://extensions` and enable **Developer mode**
+2. Click **Load unpacked** and select the `chrome-extension/` folder
+3. Navigate to the NGA builder in your Salesforce org
+4. Click **Copy Code** to copy the trace, then click the **Open in AgentLens** button that appears next to it
+5. A new tab opens with the full trace visualization
+
+The extension injects a button directly into the NGA builder UI for one-click trace viewing.
+
 ### VS Code Extension
 
 1. Build the extension: `cd vscode-extension && npm install && npm run package`
@@ -45,7 +55,7 @@ The extension provides the same visualization inside VS Code with native theme i
 
 Agentforce traces are large JSON blobs. Reading them raw is painful. AgentLens turns them into something you can actually navigate — so you can debug handoff loops, understand why an LLM chose a tool, or figure out where latency is hiding.
 
-Zero dependencies. Runs entirely in the browser. Works offline.
+Zero dependencies. Runs entirely in the browser. Works offline. Available as a web app, Chrome extension, and VS Code extension.
 
 ## License
 
