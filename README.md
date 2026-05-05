@@ -15,13 +15,23 @@ Load a trace from the **Agentforce DX** extension and AgentLens shows you:
 - **Step-by-Step Inspector** — walk through every event with full detail: system prompts, model output, tool inputs/outputs, and variable diffs
 - **Graph Analysis Report** — one-click PDF with degree distribution, connectivity analysis, betweenness centrality, and algorithm explanations
 
+## Getting a Trace
+
+AgentLens accepts trace JSON from any of these sources:
+
+| Source | How to get the trace |
+|--------|---------------------|
+| **Agentforce Builder** | Open your agent in Setup > Agentforce Builder, run a conversation in the Preview panel, then copy the JSON trace from the conversation details |
+| **SF CLI — Agent Preview** | `sf agent preview -o <org>` — after the conversation, save the transcript JSON (saved to `./temp/agent-preview` by default, or specify `--output-dir`) |
+| **Agentforce DX Extension** | Use the trace viewer in the Agentforce DX VS Code extension and copy the plan response JSON |
+
 ## Quick Start
 
 ### Web App
 
 1. Open <https://msrivastav13.github.io/AgentLens/> (or `index.html` locally — no server required)
-2. Paste or upload the plan response JSON from the Agentforce DX extension
-3. Click a sub agent to explore its state machine and step through the trace
+2. Paste or upload a trace JSON from any of the sources above
+3. The first sub agent is auto-selected — step through the trace with arrow keys or the prev/next buttons; handoffs navigate to the next agent automatically
 
 ### VS Code Extension
 
