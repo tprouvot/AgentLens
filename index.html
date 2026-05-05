@@ -1005,7 +1005,7 @@ function parsePlan(plan) {
 
   return {
     displayNames,
-    topics: [...topicSet].sort(),
+    topics: [...topicSet],
     transitionEdges: [...edgeMap.values()],
     fsmSequences,
     fsmEdges,
@@ -1674,12 +1674,12 @@ function renderTopicGraph(parsed) {
   renderTopicPills(parsed);
 }
 
-function selectTopic(topicId) {
+function selectTopic(topicId, startAtEnd) {
   selectedTopicId = topicId;
   const svg = document.getElementById('topicGraph').querySelector('svg');
   if (svg) updateTopicSelection(svg);
   document.querySelectorAll('.topic-pill').forEach(p => p.classList.toggle('active', p.dataset.topicId === topicId));
-  renderFsm(topicId, vizParsed);
+  renderFsm(topicId, vizParsed, startAtEnd);
 }
 
 function renderTopicPills(parsed) {
@@ -1705,17 +1705,48 @@ function syncFsmPlaybar() {
   const prev = document.getElementById('fsmBtnPrev');
   const next = document.getElementById('fsmBtnNext');
   const n = fsmPlayback.events.length;
-  if (prev) prev.disabled = fsmPlayback.idx <= 0;
-  if (next) next.disabled = n === 0 || fsmPlayback.idx < 0 || fsmPlayback.idx >= n - 1;
+  const topicIdx = vizParsed ? vizParsed.topics.indexOf(selectedTopicId) : -1;
+  const hasPrevTopic = topicIdx > 0;
+  const hasNextTopic = vizParsed && topicIdx >= 0 && topicIdx < vizParsed.topics.length - 1;
+  if (prev) prev.disabled = fsmPlayback.idx <= 0 && !hasPrevTopic;
+  if (next) next.disabled = n === 0 || fsmPlayback.idx < 0 || (fsmPlayback.idx >= n - 1 && !hasNextTopic);
+}
+
+function getTransitionTarget(ev) {
+  if (!ev || ev.kind !== 'transition' || ev.stepIndex == null) return null;
+  const step = currentData && currentData.plan && currentData.plan[ev.stepIndex];
+  const toAgent = step && step.data && step.data.to_agent;
+  return toAgent ? agentKey(toAgent) : null;
+}
+
+function navigateToAdjacentTopic(offset) {
+  if (!vizParsed || !selectedTopicId) return false;
+  const idx = vizParsed.topics.indexOf(selectedTopicId);
+  const target = idx + offset;
+  if (target < 0 || target >= vizParsed.topics.length) return false;
+  selectTopic(vizParsed.topics[target], offset < 0);
+  return true;
 }
 
 function stepFsmPrev() {
-  if (fsmPlayback.idx > 0) setFsmPlaybackIndex(fsmPlayback.idx - 1);
+  if (fsmPlayback.idx > 0) {
+    setFsmPlaybackIndex(fsmPlayback.idx - 1);
+  } else {
+    navigateToAdjacentTopic(-1);
+  }
 }
 
 function stepFsmNext() {
   const n = fsmPlayback.events.length;
-  if (fsmPlayback.idx < n - 1) setFsmPlaybackIndex(fsmPlayback.idx + 1);
+  if (fsmPlayback.idx < n - 1) {
+    const target = getTransitionTarget(fsmPlayback.events[fsmPlayback.idx + 1]);
+    if (target) { selectTopic(target); return; }
+    setFsmPlaybackIndex(fsmPlayback.idx + 1);
+  } else if (n > 0) {
+    const target = getTransitionTarget(fsmPlayback.events[fsmPlayback.idx]);
+    if (target) { selectTopic(target); return; }
+    navigateToAdjacentTopic(1);
+  }
 }
 
 function setFsmHighlight(macro, prevMacro) {
@@ -2145,7 +2176,7 @@ function renderFsmMacroSvg(container, trans) {
   return { nodeMap, edgePathMap };
 }
 
-function renderFsm(topicId, parsed) {
+function renderFsm(topicId, parsed, startAtEnd) {
   readFilterUiToPrefs();
   const plan = (currentData && currentData.plan) || [];
   fsmPlayback.rawEvents = buildRawTopicTimeline(plan, topicId, vizParsed && vizParsed.stepTopicMap);
@@ -2198,7 +2229,7 @@ function renderFsm(topicId, parsed) {
     return;
   }
 
-  setFsmPlaybackIndex(0);
+  setFsmPlaybackIndex(startAtEnd ? fsmPlayback.events.length - 1 : 0);
   attachFsmKeyboardNav();
 }
 
@@ -2213,18 +2244,34 @@ function showError(msg) {
   setTimeout(() => t.remove(), 4000);
 }
 
+function normalizeTrace(json) {
+  if (!json || typeof json !== 'object') return null;
+  if (Array.isArray(json.plan)) return json;
+  const steps = Array.isArray(json.allPlanSteps) && json.allPlanSteps.length
+    ? json.allPlanSteps
+    : Array.isArray(json.planSteps) ? json.planSteps : null;
+  if (!steps) return null;
+  return {
+    plan: steps,
+    planId: json.id || json.planId || null,
+    sessionId: json.sessionId || null,
+    intent: json.intent || null,
+  };
+}
+
 function loadData(json) {
-  if (!json || !Array.isArray(json.plan)) {
-    showError('JSON must contain a "plan" array. Load a plan response from the Agentforce DX extension.');
+  const normalized = normalizeTrace(json);
+  if (!normalized) {
+    showError('Unrecognized format. JSON must contain a "plan" or "allPlanSteps" array.');
     return;
   }
-  if (json.plan.length > MAX_PLAN_STEPS) {
+  if (normalized.plan.length > MAX_PLAN_STEPS) {
     showError(`Plan exceeds maximum of ${MAX_PLAN_STEPS} steps.`);
     return;
   }
-  currentData = json;
+  currentData = normalized;
   selectedTopicId = null;
-  const parsed = parsePlan(json.plan);
+  const parsed = parsePlan(normalized.plan);
   analysis = analyzeGraph(parsed);
 
   document.getElementById('mainEmpty').classList.add('hidden');
@@ -2234,15 +2281,19 @@ function loadData(json) {
 
   const meta = document.getElementById('headerMeta');
   meta.innerHTML = [
-    json.planId ? `<span class="meta-chip"><strong>Plan</strong> ${esc(String(json.planId).slice(0, 14))}…</span>` : '',
-    json.sessionId ? `<span class="meta-chip"><strong>Session</strong> ${esc(String(json.sessionId).slice(0, 14))}…</span>` : '',
+    normalized.planId ? `<span class="meta-chip"><strong>Plan</strong> ${esc(String(normalized.planId).slice(0, 14))}…</span>` : '',
+    normalized.sessionId ? `<span class="meta-chip"><strong>Session</strong> ${esc(String(normalized.sessionId).slice(0, 14))}…</span>` : '',
     `<span class="meta-chip"><strong>Sub Agents</strong> ${parsed.topics.length}</span>`,
   ].join('');
 
   renderMetrics(parsed, analysis);
   renderTopicGraph(parsed);
 
-  clearFsmPanel();
+  if (parsed.topics.length > 0) {
+    selectTopic(parsed.topics[0]);
+  } else {
+    clearFsmPanel();
+  }
 }
 
 function clearAll() {
