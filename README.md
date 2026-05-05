@@ -17,9 +17,19 @@ Load a trace from the **Agentforce DX** extension and AgentLens shows you:
 
 ## Quick Start
 
+### Web App
+
 1. Open <https://msrivastav13.github.io/AgentLens/> (or `index.html` locally — no server required)
 2. Paste or upload the plan response JSON from the Agentforce DX extension
 3. Click a sub agent to explore its state machine and step through the trace
+
+### VS Code Extension
+
+1. Build the extension: `cd vscode-extension && npm install && npm run package`
+2. Install the generated `.vsix` file in VS Code (Extensions > Install from VSIX)
+3. Open a trace JSON file — AgentLens activates automatically
+
+The extension provides the same visualization inside VS Code with native theme integration.
 
 ## Why
 
