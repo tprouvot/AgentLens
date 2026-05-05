@@ -456,6 +456,22 @@ function esc(s) {
   return _escDiv.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+function extractToolInvocations(msg) {
+  if (!msg) return [];
+  const out = [];
+  if (msg.tool_invocation && msg.tool_invocation.name) {
+    out.push({ name: msg.tool_invocation.name, arguments: msg.tool_invocation.arguments });
+  }
+  const arr = msg.tool_invocations;
+  if (Array.isArray(arr)) {
+    for (let i = 0; i < arr.length; i++) {
+      const fn = arr[i].function;
+      if (fn && fn.name) out.push({ name: fn.name, arguments: fn.arguments });
+    }
+  }
+  return out;
+}
+
 function agentKey(name) {
   if (!name) return 'none';
   return String(name).toLowerCase().replace(/\s+/g, '_');
@@ -602,9 +618,11 @@ function renderToolChipsHtml(tools) {
 function renderResponseMessagesHtml(resp, maxHeight, truncLen) {
   if (!resp.length) return '<div class="fsm-kv">—</div>';
   return resp.map(m => {
-    const inv = m.tool_invocation;
-    if (inv && inv.name) {
-      return `<pre class="fsm-pre" style="max-height:${maxHeight}px"><b>Tool call</b> ${esc(String(inv.name))}(${esc(truncateJSON(inv.arguments, truncLen))})</pre>`;
+    const invocations = extractToolInvocations(m);
+    if (invocations.length) {
+      return invocations.map(inv =>
+        `<pre class="fsm-pre" style="max-height:${maxHeight}px"><b>Tool call</b> ${esc(String(inv.name))}(${esc(truncateJSON(inv.arguments, truncLen))})</pre>`
+      ).join('');
     }
     if (truncLen < 400) {
       return `<pre class="fsm-pre" style="max-height:${maxHeight}px">${esc(truncateJSON(m.content, truncLen))}</pre>`;
@@ -928,8 +946,8 @@ function parsePlan(plan) {
         if (d.prompt_name) td.promptNames.add(String(d.prompt_name));
         for (const x of step.tools_sent || []) td.toolsSent.add(String(x));
         for (const m of step.response_messages || []) {
-          const inv = m.tool_invocation;
-          if (inv && inv.name) {
+          const invocations = extractToolInvocations(m);
+          for (const inv of invocations) {
             const nm = String(inv.name);
             td.toolsInvoked.add(nm);
             td.toolInvocations.push({
