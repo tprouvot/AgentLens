@@ -45,11 +45,11 @@ The extension injects a button directly into the NGA builder UI for one-click tr
 
 ### VS Code Extension
 
-1. Build the extension: `cd vscode-extension && npm install && npm run package`
-2. Install the generated `.vsix` file in VS Code (Extensions > Install from VSIX)
-3. Open a trace JSON file — AgentLens activates automatically
+**Install from the Marketplace:** [AgentLens Visualizer](https://marketplace.visualstudio.com/items?itemName=MohithShrivastava.agentlens-viewer)
 
-The extension provides the same visualization inside VS Code with native theme integration.
+Or search for **AgentLens Visualizer** in the VS Code Extensions panel (`Cmd+Shift+X`).
+
+The extension provides the same visualization inside VS Code with native theme integration — right-click any trace JSON file and select **Open with AgentLens**.
 
 ## Why
 
