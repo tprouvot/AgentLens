@@ -1,10 +1,14 @@
 {
-  "name": "agentlens",
-  "displayName": "AgentLens",
+  "name": "agentlens-viewer",
+  "displayName": "AgentLens Visualizer",
   "description": "Visualize Agentforce agent execution traces — agent graph, FSM diagrams, and step-by-step inspector.",
   "version": "0.3.0",
-  "publisher": "agentlens",
+  "publisher": "MohithShrivastava",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/msrivastav13/AgentLens"
+  },
   "engines": {
     "vscode": "^1.95.0"
   },
