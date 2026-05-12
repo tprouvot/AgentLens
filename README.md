@@ -33,7 +33,7 @@ AgentLens accepts trace JSON from any of these sources:
 2. Paste or upload a trace JSON from any of the sources above
 3. The first sub agent is auto-selected — step through the trace with arrow keys or the prev/next buttons; handoffs navigate to the next agent automatically
 
-### Chrome Extension
+### Chrome Extension [Work in progress]
 
 1. Open `chrome://extensions` and enable **Developer mode**
 2. Click **Load unpacked** and select the `chrome-extension/` folder
